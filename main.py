@@ -1,5 +1,5 @@
 import pygame
-import math, random
+import math, random, numbers
 import socket
 from _thread import *
 from queue import Queue
