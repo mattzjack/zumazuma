@@ -1,6 +1,4 @@
-import pygame
-import math, random, numbers
-import socket
+import pygame, math, random, numbers, socket
 from _thread import *
 from queue import Queue
 
