@@ -2,7 +2,7 @@ import socket
 from _thread import *
 from queue import Queue
 
-HOST = '128.237.171.233'
+HOST = ''
 PORT = 50014
 BACKLOG = 4
 
@@ -13,6 +13,7 @@ print("looking for connection")
 
 def serverThread(clientele, serverChannel):
     while True:
+        if len(clientele) < 2: continue
         msg = serverChannel.get(True, None)
         print("msg recv: ", msg)
         senderID, msg = int(msg.split("_")[0]), "_".join(msg.split("_")[1:])

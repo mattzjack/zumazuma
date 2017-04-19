@@ -1,21 +1,9 @@
-\documentclass[letterpaper,titlepage]{article}
-\author{Matthew~Kong}
-\title{Deliverable \#1}
+\documentclass[letterpaper]{article}
 \begin{document}
-\maketitle
-\tableofcontents
-\clearpage
 \section{Project Proposal}
 For the term project, I propose to make a 2-player version of Zuma, where the two players cooperate to eliminate all the balls before they collide into each other. Single-player mode can also be chosen at the beginning of the game.
 
-I propose to use Pygame for the main game structure, and use socket to implement the multiplayer mode, which would also include the \_thread and the queue modules. Other modules that I will probably use include but are not limited to:
-\begin{itemize}
-\item math
-\item random
-\item time
-\item numbers
-\item \ldots
-\end{itemize}
+I propose to use Pygame for the main game structure, and use socket to implement the multiplayer mode, which would also include the \_thread and the queue modules.
 
 One problem that I can imagine now is how to implement the curvy path the string of balls should follow. I see several ways to solve this problem:
 \begin{enumerate}
@@ -27,4 +15,9 @@ One problem that I can imagine now is how to implement the curvy path the string
 
 Methods \ref{method1}, \ref{method3}, and \ref{method4} all involve hard-coding, but due to the nature of puzzle games, I believe hard-coding maps is most of the times inevitable, and thus acceptable.
 \section{Competitive Analysis}
+There is already the original version of Zuma, as well as two other versions of Zuma's Revenge! and Zuma Blitz. I think those all have great features, such as sound effects, collision and explosion animations, etc., which I definitely want to incorporate into my project.
+
+I have played another game, BombSquad, and I liked its menu designs, which I will also try to include in my implementation of the game.
+\section{Technology Demonstration}
+I believe main.py and server.py files serve pretty good as demonstrations of my capability with the module that I wish to use.
 \end{document}

@@ -1,4 +1,4 @@
-import pygame, math, random, numbers, socket
+import pygame, math, random, numbers, socket, pickle
 from _thread import *
 from queue import Queue
 
@@ -14,10 +14,10 @@ class Ball(pygame.sprite.Sprite):
             scaled_img = pygame.transform.scale(img, (w, h))
             Ball.images.append(scaled_img)
 
-    def __init__(self, owner, index):
+    def __init__(self, owner, index, color):
         super().__init__()
         self.owner = owner
-        self.image = random.choice(Ball.images)
+        self.image = Ball.images[color]
         self.w, self.h = self.image.get_size()
         self.index = index
         if self.index == 0:
@@ -70,8 +70,11 @@ class Head(pygame.sprite.Sprite):
         self.angle = -math.pi / 2
         self.ball_group = pygame.sprite.Group()
         self.num_balls = 10
+        self.ball_list = list()
         for i in range(self.num_balls):
-            self.ball_group.add(Ball(self, i))
+            ball_color = random.randint(0, 2)
+            self.ball_list.append(ball_color)
+            self.ball_group.add(Ball(self, i, ball_color))
 
     def rotate(self, pos):
         x1, y1 = pos
@@ -159,6 +162,9 @@ class Game(object):
                 elif self.id == 1:
                     self.my_head = Head(self.id, self.width * 2 / 3, self.height * 2 / 3)
                 self.head_group.add(self.my_head)
+                msg = 'balls ' + ' '.join(str(self.my_head.ball_list[i]) for i in range(len(self.my_head.ball_list))) + '\n'
+                print('sending to server:', repr(msg))
+                server.send(msg.encode())
             elif msg.startswith('new_player'):
                 msg = msg.split()
                 self.his_id = int(msg[1])
@@ -167,6 +173,15 @@ class Game(object):
                 elif self.his_id == 1:
                     self.his_head = Head(self.his_id, self.width * 2 / 3, self.height * 2 / 3)
                 self.head_group.add(self.his_head)
+            elif msg.startswith('balls'):
+                msg = msg.split()
+                self.his_head.ball_list = msg[1:]
+                for i in range(len(self.his_head.ball_list)):
+                    self.his_head.ball_list[i] = int(self.his_head.ball_list[i])
+                self.his_head.ball_group = pygame.sprite.Group()
+                for i in range(len(self.his_head.ball_list)):
+                    ball_color = self.his_head.ball_list[i]
+                    self.his_head.ball_group.add(Ball(self.his_head, i, ball_color))
             elif msg.startswith('clicked'):
                 msg = msg.split()
                 x = int(msg[1])
@@ -217,7 +232,7 @@ class Game(object):
             pygame.display.flip()
         pygame.quit()
 
-HOST = '128.237.171.233'
+HOST = ''
 PORT = 50014
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
