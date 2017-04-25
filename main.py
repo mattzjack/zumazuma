@@ -26,7 +26,6 @@ class Ball(pygame.sprite.Sprite):
         self.w, self.h = self.image.get_size()
         self.r = max(self.w, self.h) / 2
         self.index = index
-        # self.pos = int(self.owner.pos - max(self.owner.w, self.owner.h) / 2 - (self.index - .5) * 2 * self.r)
         self.update_pos()
         self.update_coords()
         self.is_bound = True
@@ -36,7 +35,6 @@ class Ball(pygame.sprite.Sprite):
 
     def move(self):
         if self.is_bound:
-            # self.pos += self.pos_speed
             self.update_pos()
             self.update_coords()
             self.update_rect()
@@ -126,7 +124,6 @@ class Head(pygame.sprite.Sprite):
                     self.ball_group.remove(ball)
                 else:
                     ball.index -= 1
-                    # ball.pos = int(ball.owner.pos - max(ball.owner.w, ball.owner.h) / 2 - (ball.index - .5) * 2 * ball.r)
                     ball.update_pos()
                     ball.update_coords()
                     ball.update_rect()
@@ -277,7 +274,6 @@ class Game(object):
             self.game_mouse_button_down(pos, button)
 
     def send_msg(self, msg):
-        # print('sending to server:', repr(msg))
         server.send(msg.encode())
 
     def handle_id_msg(self, msg):
@@ -328,6 +324,7 @@ class Game(object):
     def handle_msg(self):
         if serverMsg.qsize() > 0:
             msg = serverMsg.get(False)
+            if msg == '': return
             msg = msg.split()
             if msg[0] == 'start':
                 self.can_start = True
@@ -335,6 +332,8 @@ class Game(object):
                 self.handle_id_msg(msg)
             elif msg[0] == 'new_player':
                 self.handle_new_player_msg(msg)
+                msg = 'ready\n\n'
+                self.send_msg(msg)
             elif msg[0] == 'balls':
                 self.handle_balls_msg(msg)
             elif msg[0] == 'clicked':
@@ -410,7 +409,7 @@ class Game(object):
         for head in self.head_group:
             head.ball_group.draw(self.screen)
         self.free_ball_group.draw(self.screen)
-        # self.draw_path()
+        self.draw_path()
 
     def intro_redraw_all(self):
         self.play_button.draw(self.screen)
@@ -443,7 +442,6 @@ PORT = 50014
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 server.connect((HOST,PORT))
-# print("connected to server")
 
 serverMsg = Queue(100)
 

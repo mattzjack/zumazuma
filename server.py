@@ -9,26 +9,28 @@ BACKLOG = 4
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind((HOST,PORT))
 server.listen(BACKLOG)
-# print("looking for connection")
+
+num_ready_players = [0]
 
 def serverThread(clientele, serverChannel):
     sent = False
     while True:
-        if len(clientele) < 2: continue
-        if not sent:
+        if not sent and num_ready_players[0] == 2:
             sent = True
             msg = 'start\n'
             for cID in clientele:
                 clientele[cID].send(msg.encode())
         msg = serverChannel.get(True, None)
-        # print("msg recv: ", msg)
+        msg_sent = False
+        original_msg = msg
         senderID, msg = int(msg.split("_")[0]), "_".join(msg.split("_")[1:])
-        if (msg):
-            for cID in clientele:
-                if cID != senderID:
-                    sendMsg = msg + "\n"
-                    # print('sending msg to %d:' % cID, repr(sendMsg))
-                    clientele[cID].send(sendMsg.encode())
+        for cID in clientele:
+            if cID != senderID:
+                sendMsg = msg + "\n"
+                clientele[cID].send(sendMsg.encode())
+                msg_sent = True
+        if not msg_sent:
+            serverChannel.put(original_msg)
     serverChannel.task_done()
 
 clientele = {}
@@ -45,24 +47,24 @@ def handleClient(client, serverChannel, cID):
         command = msg.split("\n")
         while (len(command) > 1):
             readyMsg = command[0]
+            can_put = True
+            if readyMsg.startswith('ready'):
+                can_put = False
+                num_ready_players[0] += 1
+            if can_put:
+                serverChannel.put(str(cID) + "_" + readyMsg)
             msg = "\n".join(command[1:])
-            serverChannel.put(str(cID) + "_" + readyMsg)
             command = msg.split("\n")
 
 while True:
     client, address = server.accept()
-    # print('currID:', currID)
     msg = ("id %d\n" % (currID))
-    # print('sending msg to %d:' % currID, repr(msg))
     client.send(msg.encode())
     for cID in clientele:
         msg = ("new_player %d\n" % currID)
-        # print('sending msg to %d:' % cID, repr(msg))
         clientele[cID].send(msg.encode())
         msg = ('new_player %d\n' % cID)
-        # print('sending msg to %d:' % currID, repr(msg))
         client.send(msg.encode())
     clientele[currID] = client
-    # print("connection recieved")
     start_new_thread(handleClient, (client,serverChannel, currID))
     currID += 1
