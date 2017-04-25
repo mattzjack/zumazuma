@@ -1,4 +1,4 @@
-import pygame, math, random, numbers, socket, pickle
+import pygame, math, random, numbers, socket, pickle, time
 from _thread import *
 from queue import Queue
 
@@ -87,7 +87,7 @@ class Head(pygame.sprite.Sprite):
         self.angle = -math.pi / 2
         self.pos_speed = 2
         self.ball_group = pygame.sprite.Group()
-        self.num_balls = 50
+        self.num_balls = 10
         self.ball_list = list()
         for i in range(self.num_balls):
             ball_color = random.randint(0, 2)
@@ -253,10 +253,13 @@ class Game(object):
 
         self.game_path = random.choice(Game.paths)
 
+        self.can_start = False
+
     def game_mouse_motion(self, pos, rel, buttons):
         self.my_head.rotate(pos)
         msg = (('moved' + ' %d' * 7 + '\n') %
         (pos[0], pos[1], rel[0], rel[1], buttons[0], buttons[1], buttons[2]))
+        if not self.can_start: return
         self.send_msg(msg)
 
     def mouse_motion(self, pos, rel, buttons):
@@ -325,9 +328,10 @@ class Game(object):
     def handle_msg(self):
         if serverMsg.qsize() > 0:
             msg = serverMsg.get(False)
-            # print('msg recv:', repr(msg))
             msg = msg.split()
-            if msg[0] == 'id':
+            if msg[0] == 'start':
+                self.can_start = True
+            elif msg[0] == 'id':
                 self.handle_id_msg(msg)
             elif msg[0] == 'new_player':
                 self.handle_new_player_msg(msg)
@@ -380,6 +384,7 @@ class Game(object):
 
     def timer_fired(self):
         self.handle_msg()
+        if not self.can_start: return
         for head in self.head_group:
             head.move()
             for ball in head.ball_group:
@@ -432,7 +437,7 @@ class Game(object):
             pygame.display.flip()
         pygame.quit()
 
-HOST = '128.237.187.239'
+HOST = ''
 PORT = 50014
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

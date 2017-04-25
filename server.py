@@ -1,27 +1,33 @@
-import socket
+import socket, time
 from _thread import *
 from queue import Queue
 
-HOST = '128.237.187.239'
+HOST = ''
 PORT = 50014
 BACKLOG = 4
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind((HOST,PORT))
 server.listen(BACKLOG)
-print("looking for connection")
+# print("looking for connection")
 
 def serverThread(clientele, serverChannel):
+    sent = False
     while True:
         if len(clientele) < 2: continue
+        if not sent:
+            sent = True
+            msg = 'start\n'
+            for cID in clientele:
+                clientele[cID].send(msg.encode())
         msg = serverChannel.get(True, None)
-        print("msg recv: ", msg)
+        # print("msg recv: ", msg)
         senderID, msg = int(msg.split("_")[0]), "_".join(msg.split("_")[1:])
         if (msg):
             for cID in clientele:
                 if cID != senderID:
                     sendMsg = msg + "\n"
-                    print('sending msg to %d:' % cID, repr(sendMsg))
+                    # print('sending msg to %d:' % cID, repr(sendMsg))
                     clientele[cID].send(sendMsg.encode())
     serverChannel.task_done()
 
@@ -45,18 +51,18 @@ def handleClient(client, serverChannel, cID):
 
 while True:
     client, address = server.accept()
-    print('currID:', currID)
+    # print('currID:', currID)
     msg = ("id %d\n" % (currID))
-    print('sending msg to %d:' % currID, repr(msg))
+    # print('sending msg to %d:' % currID, repr(msg))
     client.send(msg.encode())
     for cID in clientele:
         msg = ("new_player %d\n" % currID)
-        print('sending msg to %d:' % cID, repr(msg))
+        # print('sending msg to %d:' % cID, repr(msg))
         clientele[cID].send(msg.encode())
         msg = ('new_player %d\n' % cID)
-        print('sending msg to %d:' % currID, repr(msg))
+        # print('sending msg to %d:' % currID, repr(msg))
         client.send(msg.encode())
     clientele[currID] = client
-    print("connection recieved")
+    # print("connection recieved")
     start_new_thread(handleClient, (client,serverChannel, currID))
     currID += 1
