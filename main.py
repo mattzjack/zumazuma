@@ -26,14 +26,20 @@ class Ball(pygame.sprite.Sprite):
         self.w, self.h = self.image.get_size()
         self.r = max(self.w, self.h) / 2
         self.index = index
+        # self.pos = int(self.owner.pos - max(self.owner.w, self.owner.h) / 2 - (self.index - .5) * 2 * self.r)
+        self.update_pos()
         self.update_coords()
         self.is_bound = True
         self.update_rect()
         self.angle = 0
+        self.pos_speed = self.owner.pos_speed
 
     def move(self):
         if self.is_bound:
-            pass
+            # self.pos += self.pos_speed
+            self.update_pos()
+            self.update_coords()
+            self.update_rect()
         else:
             vx = Ball.SPEED * math.cos(self.angle)
             vy = -Ball.SPEED * math.sin(self.angle)
@@ -41,12 +47,17 @@ class Ball(pygame.sprite.Sprite):
             self.cy += vy
             self.update_rect()
 
+    def update_pos(self):
+        self.pos = int(self.owner.pos - max(self.owner.w, self.owner.h) / 2 - (self.index - .5) * 2 * self.r)
+
     def update_coords(self):
         if self.index == 0:
-            self.cx = self.owner.cx
+            self.cx, self.cy = self.owner.cx, self.owner.cy
         else:
-            self.cx = self.owner.cx - self.owner.w / 2 - (self.index - .5) * self.w
-        self.cy = self.owner.cy
+            if self.pos >= 0:
+                self.cx, self.cy = self.owner.path[self.pos]
+            else:
+                self.cx, self.cy = -50, -50
 
     def update_rect(self):
         self.x0 = self.cx - self.w / 2
@@ -63,25 +74,35 @@ class Head(pygame.sprite.Sprite):
             scaled_img = pygame.transform.scale(img, (w, h))
             Head.images.append(scaled_img)
 
-    def __init__(self, index, cx, cy):
+    def __init__(self, index, path):
         super().__init__()
+        self.path = path
         self.index = index
+        self.pos = 0
+        self.cx, self.cy = path[self.pos]
         self.base_image = Head.images[self.index]
         self.image = self.base_image.copy()
-        self.cx = cx
-        self.cy = cy
         self.w, self.h = self.image.get_size()
-        self.x0 = self.cx - self.w / 2
-        self.y0 = self.cy - self.h / 2
-        self.rect = pygame.Rect(self.x0, self.y0, self.w, self.h)
+        self.update_rect()
         self.angle = -math.pi / 2
+        self.pos_speed = 2
         self.ball_group = pygame.sprite.Group()
-        self.num_balls = 10
+        self.num_balls = 50
         self.ball_list = list()
         for i in range(self.num_balls):
             ball_color = random.randint(0, 2)
             self.ball_list.append(ball_color)
         self.update_ball_group(self.ball_list)
+
+    def update_rect(self):
+        self.x0 = self.cx - self.w / 2
+        self.y0 = self.cy - self.h / 2
+        self.rect = pygame.Rect(self.x0, self.y0, self.w, self.h)
+
+    def move(self):
+        self.pos += self.pos_speed
+        self.cx, self.cy = self.path[self.pos]
+        self.update_rect()
 
     def rotate(self, pos):
         x1, y1 = pos
@@ -105,13 +126,10 @@ class Head(pygame.sprite.Sprite):
                     self.ball_group.remove(ball)
                 else:
                     ball.index -= 1
-                    if ball.index == 0:
-                        ball.cx = ball.owner.cx
-                    else:
-                        ball.cx = ball.owner.cx - ball.owner.w / 2 - (ball.index - .5) * ball.w
-                    ball.x0 = ball.cx - ball.w / 2
-                    ball.y0 = ball.cy - ball.h / 2
-                    ball.rect = pygame.Rect(ball.x0, ball.y0, ball.w, ball.h)
+                    # ball.pos = int(ball.owner.pos - max(ball.owner.w, ball.owner.h) / 2 - (ball.index - .5) * 2 * ball.r)
+                    ball.update_pos()
+                    ball.update_coords()
+                    ball.update_rect()
 
     def update_ball_group(self, L):
         self.ball_list = L.copy()
@@ -130,11 +148,89 @@ class Button(pygame.sprite.Sprite):
         self.text = text
         self.color = color
 
+class Path(object):
+    def __init__(self, game_width, game_height):
+        self.index = -1
+        self.p0path = []
+        self.p1path = []
+        self.game_width = game_width
+        self.game_height = game_height
+
+    def load_path0(self):
+        # this is a rectangular path
+        # player 0 starts at bottom left, goes up, and keeps turning right
+        # player 1 starts at top right, goes down, and keeps turning right
+        self.index = 0
+
+        # p0: up
+        x = self.game_width // 10
+        for y in range(self.game_height * 11 // 10, self.game_height // 10, -1):
+            self.p0path.append((x, y))
+        # p0: right
+        y = self.game_height // 10
+        for x in range(self.game_width // 10, self.game_width * 4 // 5):
+            self.p0path.append((x, y))
+        # p0: down
+        x = self.game_width * 4 // 5
+        for y in range(self.game_height // 10, self.game_height * 4 // 5):
+            self.p0path.append((x, y))
+        # p0: left
+        y = self.game_height * 4 // 5
+        for x in range(self.game_width * 4 // 5, self.game_width * 3 // 10, -1):
+            self.p0path.append((x, y))
+        # p0: up
+        x = self.game_width * 3 // 10
+        for y in range(self.game_height * 4 // 5, self.game_height // 2, -1):
+            self.p0path.append((x, y))
+        # p0: right
+        y = self.game_height // 2
+        for x in range(self.game_width * 3 // 10, self.game_width // 2):
+            self.p0path.append((x, y))
+
+        # p1: down
+        x = self.game_width * 9 // 10
+        for y in range(-self.game_height // 10, self.game_height * 9 // 10):
+            self.p1path.append((x, y))
+        # p1: left
+        y = self.game_height * 9 // 10
+        for x in range(self.game_width * 9 // 10, self.game_width // 5, -1):
+            self.p1path.append((x, y))
+        # p1: up
+        x = self.game_width // 5
+        for y in range(self.game_height * 9 // 10, self.game_height // 5, -1):
+            self.p1path.append((x, y))
+        # p1: right
+        y = self.game_height // 5
+        for x in range(self.game_width // 5, self.game_width * 7 // 10):
+            self.p1path.append((x, y))
+        # p1: down
+        x = self.game_width * 7 // 10
+        for y in range(self.game_height // 5, self.game_height // 2):
+            self.p1path.append((x, y))
+        # p1: left
+        y = self.game_height // 2
+        for x in range(self.game_width * 7 // 10, self.game_width // 2, -1):
+            self.p1path.append((x, y))
+
+
 class Game(object):
+    paths = []
+
+    @staticmethod
+    def load_path0(game_width, game_height):
+        this_path = Path(game_width, game_height)
+        this_path.load_path0()
+        Game.paths.append(this_path)
+
+    @staticmethod
+    def load_paths(game_width, game_height):
+        Game.load_path0(game_width, game_height)
+
     def __init__(self):
         pygame.init()
         self.width = 800
         self.height = 600
+        Game.load_paths(self.width, self.height)
         self.screen = pygame.display.set_mode((self.width, self.height))
         self.clock = pygame.time.Clock()
         Head.load_images()
@@ -154,6 +250,8 @@ class Game(object):
         self.free_ball_group = pygame.sprite.Group()
 
         self.my_head = self.his_head = None
+
+        self.game_path = random.choice(Game.paths)
 
     def game_mouse_motion(self, pos, rel, buttons):
         self.my_head.rotate(pos)
@@ -176,15 +274,15 @@ class Game(object):
             self.game_mouse_button_down(pos, button)
 
     def send_msg(self, msg):
-        print('sending to server:', repr(msg))
+        # print('sending to server:', repr(msg))
         server.send(msg.encode())
 
     def handle_id_msg(self, msg):
         self.id = int(msg[1])
         if self.id == 0:
-            self.my_head = Head(self.id, self.width / 3, self.height / 3)
+            self.my_head = Head(self.id, self.game_path.p0path)
         elif self.id == 1:
-            self.my_head = Head(self.id, self.width * 2 / 3, self.height * 2 / 3)
+            self.my_head = Head(self.id, self.game_path.p1path)
         self.head_group.add(self.my_head)
         msg_out = 'balls ' + ' '.join(str(self.my_head.ball_list[i]) for i in range(len(self.my_head.ball_list))) + '\n'
         self.send_msg(msg_out)
@@ -192,9 +290,9 @@ class Game(object):
     def handle_new_player_msg(self, msg):
         self.his_id = int(msg[1])
         if self.his_id == 0:
-            self.his_head = Head(self.his_id, self.width / 3, self.height / 3)
+            self.his_head = Head(self.his_id, self.game_path.p0path)
         elif self.his_id == 1:
-            self.his_head = Head(self.his_id, self.width * 2 / 3, self.height * 2 / 3)
+            self.his_head = Head(self.his_id, self.game_path.p1path)
         self.head_group.add(self.his_head)
 
     def handle_balls_msg(self, msg):
@@ -227,7 +325,7 @@ class Game(object):
     def handle_msg(self):
         if serverMsg.qsize() > 0:
             msg = serverMsg.get(False)
-            print('msg recv:', repr(msg))
+            # print('msg recv:', repr(msg))
             msg = msg.split()
             if msg[0] == 'id':
                 self.handle_id_msg(msg)
@@ -251,6 +349,7 @@ class Game(object):
                 other_ball.index += 1
         head.ball_group.add(ball)
         for every_ball in head.ball_group:
+            every_ball.update_pos()
             every_ball.update_coords()
             every_ball.update_rect()
 
@@ -273,6 +372,7 @@ class Game(object):
                             if ball.index > second_ball.index:
                                 ball.index -= 2
                         for ball in group:
+                            ball.update_pos()
                             ball.update_coords()
                             ball.update_rect()
                     else:
@@ -281,6 +381,7 @@ class Game(object):
     def timer_fired(self):
         self.handle_msg()
         for head in self.head_group:
+            head.move()
             for ball in head.ball_group:
                 ball.move()
         for ball in self.free_ball_group:
@@ -290,11 +391,21 @@ class Game(object):
         if self.his_head != None:
             self.handle_ball_collision(self.his_head)
 
+    def draw_path(self):
+        for path in Game.paths:
+            for pixel in path.p0path:
+                x, y = pixel
+                pygame.draw.circle(self.screen, (0, 0, 0), (x, y), 1)
+            for pixel in path.p1path:
+                x, y = pixel
+                pygame.draw.circle(self.screen, (255, 0, 0), (x, y), 1)
+
     def game_redraw_all(self):
         self.head_group.draw(self.screen)
         for head in self.head_group:
             head.ball_group.draw(self.screen)
         self.free_ball_group.draw(self.screen)
+        # self.draw_path()
 
     def intro_redraw_all(self):
         self.play_button.draw(self.screen)
@@ -321,13 +432,13 @@ class Game(object):
             pygame.display.flip()
         pygame.quit()
 
-HOST = ''
+HOST = '128.237.187.239'
 PORT = 50014
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 server.connect((HOST,PORT))
-print("connected to server")
+# print("connected to server")
 
 serverMsg = Queue(100)
 
