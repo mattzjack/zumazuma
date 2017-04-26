@@ -1,0 +1,2 @@
+Now the main.py is a working demo, with minimum bugs. I need to work more on the
+winning mechanism, as it is now difficult to win.
