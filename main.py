@@ -92,6 +92,8 @@ class Game(object):
         self.custom_path = None
         self.is_editing_p0path = True
 
+        self.bg = pygame.transform.scale(pygame.image.load('./imgs/bg.png'), (self.width, self.height))
+
     def game_mouse_motion(self, pos, rel, buttons):
         self.my_head.rotate(pos)
         msg = (('moved' + ' %d' * 7 + '\n') %
@@ -395,8 +397,8 @@ class Game(object):
         self.edit_buttons_group.update()
 
     def generate_curr_path_img(self):
-        self.curr_path_img = pygame.Surface((self.width, self.height))
-        self.curr_path_img.fill((255, 255, 255))
+        # UnkwnTech
+        self.curr_path_img = pygame.Surface((self.width, self.height), pygame.SRCALPHA, 32).convert_alpha()
         path = self.game_path
         for pixel in path.p0path:
             x, y = pixel
@@ -413,7 +415,11 @@ class Game(object):
             self.generate_curr_path_img()
         self.draw_curr_path_img()
 
+    def draw_bg(self):
+        self.screen.blit(self.bg, (0, 0))
+
     def game_redraw_all(self):
+        self.draw_bg()
         self.draw_path()
         self.head_group.draw(self.screen)
         for head in self.head_group:
@@ -523,11 +529,13 @@ game = Game()
 game.run()
 
 # Works Cited #
+# AndroidGunso. YouTube. https://i.ytimg.com/vi/hDR6N3EdG34/maxresdefault.jpg
 # Giráldez, Gustavo. Answer on "Draw a transparent rectangle in pygame." StackOverflow. http://stackoverflow.com/questions/6339057/draw-a-transparent-rectangle-in-pygame
 # roblox. https://www.roblox.com/library/79538736/Zuma-Frog.
 # sloth. Answer on "Detect mouseover an image in Pygame." StackOverflow. http://stackoverflow.com/questions/11846032/detect-mouseover-an-image-in-pygame.
+# UnkwnTech. Answer on "How to make a surface with a transparent background in pygame." StackOverflow. http://stackoverflow.com/questions/328061/how-to-make-a-surface-with-a-transparent-background-in-pygame
 # veiset. StackOverflow. http://stackoverflow.com/questions/10077644/python-display-text-w-font-color.
-# AndroidGunso. YouTube. https://i.ytimg.com/vi/hDR6N3EdG34/maxresdefault.jpg
+# Zuma Game Awesome Stuff. Pinterest. https://s-media-cache-ak0.pinimg.com/originals/4a/37/a5/4a37a5314f51ba7398005a26ac1a4496.jpg
 
 # Bibliography
 # DeGlopper, Peter. Answer on "Bytes to int - Python 3." StackOverflow. http://stackoverflow.com/questions/34009653/bytes-to-int-python-3/
