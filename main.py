@@ -23,20 +23,23 @@ class Ball(pygame.sprite.Sprite):
 
     def __init__(self, owner, index, color, game_width, game_height):
         super().__init__()
+
         self.owner = owner
+        self.index = index
+        self.color = color
         self.game_width = game_width
         self.game_height = game_height
+
         self.image = Ball.images[color]
-        self.color = color
         self.w, self.h = self.image.get_size()
         self.r = max(self.w, self.h) / 2
-        self.index = index
         self.update_pos()
         self.update_coords()
         self.is_bound = True
         self.update_rect()
         self.angle = 0
         self.pos_speed = self.owner.pos_speed
+        self.was_colliding = False
 
     def move(self):
         if self.is_bound:
@@ -75,6 +78,20 @@ class Ball(pygame.sprite.Sprite):
         self.y0 = self.cy - self.h / 2
         self.rect = pygame.Rect(self.x0, self.y0, self.w, self.h)
 
+    def update_ball_list(self):
+        self.ball_list = list()
+        while len(self.ball_list) < len(self.ball_group):
+            found = False
+            for ball in self.ball_group:
+                if ball.index == len(self.ball_list):
+                    found = True
+                    self.ball_list.append(ball.color)
+            if not found:
+                raise Exception('ball with index %d not found' % len(self.ball_list))
+
+    def update(self):
+        self.update_ball_list()
+
 class Head(pygame.sprite.Sprite):
     @staticmethod
     def load_images():
@@ -100,9 +117,9 @@ class Head(pygame.sprite.Sprite):
         self.w, self.h = self.image.get_size()
         self.update_rect()
         self.angle = -math.pi / 2
-        self.pos_speed = 2
+        self.pos_speed = 1
         self.ball_group = pygame.sprite.Group()
-        self.num_balls = 2
+        self.num_balls = 15
         self.ball_list = list()
         for i in range(self.num_balls):
             ball_color = random.randint(0, 2)
@@ -158,7 +175,7 @@ class Button(pygame.sprite.Sprite):
     def load_images():
         # images from AndroidGunso
         Button.images = dict()
-        for file in ['green', 'play']:
+        for file in ['green', 'play', 'back', 'red']:
             Button.images[file] = pygame.image.load('./imgs/%s_button.png' % file)
 
     def __init__(self, x0, y0, w, h, font, text, color):
@@ -172,6 +189,15 @@ class Button(pygame.sprite.Sprite):
         self.color = color
 
         self.base_image = pygame.transform.scale(Button.images[self.color], (self.w, self.h))
+        self.rect = pygame.Rect(self.x0, self.y0, self.w, self.h)
+        # veiset
+        # BEGIN
+        self.label = self.font.render(self.text, 1, (205, 250, 195))
+        pos = (((self.rect.w-self.label.get_size()[0]) / 2), ((self.rect.h - self.label.get_size()[1]) / 2))
+        self.base_image.blit(self.label, pos)
+        # END
+
+        # generate hover img
         self.base_string = pygame.image.tostring(self.base_image, 'RGBA')
         self.hover_string = b''
         for i in range(0, len(self.base_string), 4):
@@ -182,15 +208,14 @@ class Button(pygame.sprite.Sprite):
             for elem in [r, g, b, a]:
                 self.hover_string += elem.to_bytes(1, 'big')
         self.hover_image = pygame.image.fromstring(self.hover_string, (self.w, self.h), 'RGBA')
+
         self.image = self.base_image.copy()
-        # veiset
-        # BEGIN
-        self.label = self.font.render(self.text, 1, (255, 255, 255))
-        self.image.blit(self.label, (0, 0))
-        # END
-        self.rect = pygame.Rect(self.x0, self.y0, self.w, self.h)
+
         self.prev_is_hover = False
         self.is_hover = False
+
+    def update(self):
+        self.update_img()
 
     def update_img(self):
         self.prev_is_hover = self.is_hover
@@ -286,7 +311,8 @@ class Game(object):
         pygame.init()
         # veiset
         # BEGIN
-        self.font = pygame.font.SysFont('monospace', 30)
+        self.font = pygame.font.Font('./fonts/Courier.dfont', 30)
+        self.papyrus = pygame.font.Font('./fonts/Papyrus.ttc', 30)
         # END
         Button.load_images()
         self.width = 800
@@ -301,6 +327,7 @@ class Game(object):
         self.GAME_SPLASH = 'game'
         self.WIN_SPLASH = 'win'
         self.LOSE_SPLASH = 'lose'
+        self.EDIT_SPLASH = 'edit'
 
         self.FPS = 50
         self.is_playing = True
@@ -321,9 +348,18 @@ class Game(object):
 
         self.play_button = Button(self.width / 2 - 75, self.height / 2 - 25,
                                   150, 50, self.font, '', 'play')
-        self.intro_button_group = pygame.sprite.Group(self.play_button)
+        self.edit_button = Button(self.width / 2 - 75, self.height / 2 + 25,
+                                  150, 50, self.papyrus, 'Edit Maps', 'green')
+        self.intro_button_group = pygame.sprite.Group(self.play_button, self.edit_button)
+
+        self.edit_save_button = Button(0, self.height - 100,
+                                       150, 50, self.font, 'Save', 'green')
+        self.edit_abandon_button = Button(0, self.height - 50,
+                                          150, 50, self.font, 'Abandon', 'red')
+        self.edit_buttons_group = pygame.sprite.Group(self.edit_save_button, self.edit_abandon_button)
 
         self.is_game_over = False
+        self.curr_path_img = None
 
     def game_mouse_motion(self, pos, rel, buttons):
         self.my_head.rotate(pos)
@@ -347,6 +383,8 @@ class Game(object):
             self.splash = self.GAME_SPLASH
             msg = 'ready\n\n'
             self.send_msg(msg)
+        elif self.edit_button.rect.collidepoint(pos):
+            self.splash = self.EDIT_SPLASH
 
     def mouse_button_down(self, pos, button):
         if self.splash == self.GAME_SPLASH:
@@ -452,6 +490,7 @@ class Game(object):
                                                     group, False, False,
                                                     ball_collide)
         for ball in collided_balls:
+            ball.was_colliding = True
             other_balls = collided_balls[ball]
             if len(other_balls) == 2:
                 first_ball = other_balls[0]
@@ -470,6 +509,9 @@ class Game(object):
                             ball.update_rect()
                     else:
                         self.insert_ball_after_index(ball, head, min(first_ball.index, second_ball.index))
+        for ball in self.free_ball_group:
+            if ball not in collided_balls:
+                ball.was_colliding = False
 
     def timer_fired(self):
         self.handle_msg()
@@ -477,9 +519,12 @@ class Game(object):
             self.intro_timer_fired()
         elif self.splash == self.GAME_SPLASH:
             self.game_timer_fired()
+        elif self.splash == self.EDIT_SPLASH:
+            self.edit_timer_fired()
 
     def intro_timer_fired(self):
-        self.play_button.update_img()
+        for button in self.intro_button_group:
+            button.update_img()
 
     def game_timer_fired(self):
         if not self.can_start: return
@@ -510,21 +555,34 @@ class Game(object):
         if self.his_head != None:
             self.handle_ball_collision(self.his_head)
 
+    def edit_timer_fired(self):
+        self.edit_buttons_group.update()
+
+    def generate_curr_path_img(self):
+        self.curr_path_img = pygame.Surface((self.width, self.height))
+        self.curr_path_img.fill((255, 255, 255))
+        path = self.game_path
+        for pixel in path.p0path:
+            x, y = pixel
+            pygame.draw.circle(self.curr_path_img, (165, 42, 42), (x, y), 30)
+        for pixel in path.p1path:
+            x, y = pixel
+            pygame.draw.circle(self.curr_path_img, (165, 42, 42), (x, y), 30)
+
+    def draw_curr_path_img(self):
+        self.screen.blit(self.curr_path_img, (0, 0))
+
     def draw_path(self):
-        for path in Game.paths:
-            for pixel in path.p0path:
-                x, y = pixel
-                pygame.draw.circle(self.screen, (0, 0, 0), (x, y), 1)
-            for pixel in path.p1path:
-                x, y = pixel
-                pygame.draw.circle(self.screen, (255, 0, 0), (x, y), 1)
+        if self.curr_path_img == None:
+            self.generate_curr_path_img()
+        self.draw_curr_path_img()
 
     def game_redraw_all(self):
+        self.draw_path()
         self.head_group.draw(self.screen)
         for head in self.head_group:
             head.ball_group.draw(self.screen)
         self.free_ball_group.draw(self.screen)
-        self.draw_path()
 
     def intro_redraw_all(self):
         self.intro_button_group.draw(self.screen)
@@ -554,6 +612,17 @@ class Game(object):
         w, h = lose_surface.get_size()
         self.screen.blit(lose_surface, ((self.width - w) / 2, (self.height - h) / 2))
 
+    def edit_draw_title(self):
+        title = self.font.render('CUSTOM MAP', 1, (0, 0, 0))
+        self.screen.blit(title, ((self.width - title.get_width()) / 2, 0))
+
+    def edit_draw_buttons(self):
+        self.edit_buttons_group.draw(self.screen)
+
+    def edit_redraw_all(self):
+        self.edit_draw_title()
+        self.edit_draw_buttons()
+
     def redraw_all(self):
         if self.splash == self.GAME_SPLASH:
             self.game_redraw_all()
@@ -563,6 +632,8 @@ class Game(object):
             self.win_redraw_all()
         elif self.splash == self.LOSE_SPLASH:
             self.lose_redraw_all()
+        elif self.splash == self.EDIT_SPLASH:
+            self.edit_redraw_all()
 
     def run(self):
         while self.is_playing:
