@@ -82,13 +82,15 @@ class Game(object):
         self.game_menu_button = Button(self.width - 130, 0, 100, 40,
                                        self.font, '', 'menu')
 
-        # self.menu_restart_button = Button(self.width / 2 - 100, self.height / 2 - 100,
-        #                                   200, 50, self.font, 'Restart', 'red')
-        self.menu_main_button = Button(self.width / 2 - 100, self.height / 2 - 50,
+        self.menu_main_button = Button(self.width / 2 - 100,
+                                       self.height / 2 - 50,
                                        200, 50, self.font, 'Main Menu', 'green')
-        self.menu_settings_button = Button(self.width / 2 - 100, self.height / 2,
-                                           200, 50, self.font, 'Settings', 'purple')
-        self.menu_back_button = Button(self.width / 2 - 100, self.height / 2 + 100,
+        self.menu_settings_button = Button(self.width / 2 - 100,
+                                           self.height / 2,
+                                           200, 50, self.font, 'Settings',
+                                           'purple')
+        self.menu_back_button = Button(self.width / 2 - 100,
+                                       self.height / 2 + 100,
                                        200, 50, self.font, '', 'back')
 
         self.settings_bgm_button = Button(self.width / 5, self.height / 2 - 50,
@@ -100,31 +102,36 @@ class Game(object):
                                            150, 50, self.font, '', 'back')
 
         # load bg imgs
-        self.intro_bg = pygame.transform.scale(pygame.image.load('./imgs/intro.png'), (self.width, self.height))
-        self.bg = pygame.transform.scale(pygame.image.load('./imgs/bg.png'), (self.width, self.height))
-        self.purple_bg = pygame.transform.scale(pygame.image.load('./imgs/purple_bg.png'), (self.width, self.height))
+        self.intro_bg = pygame.transform.scale(
+            pygame.image.load('./imgs/intro.png'), (self.width, self.height))
+        self.bg = pygame.transform.scale(
+            pygame.image.load('./imgs/bg.png'), (self.width, self.height))
+        self.purple_bg = pygame.transform.scale(
+            pygame.image.load('./imgs/purple_bg.png'),
+            (self.width, self.height))
 
         # game groups
         self.head_group = pygame.sprite.Group()
         self.free_ball_group = pygame.sprite.Group()
 
         # button groups
-        self.intro_button_group = pygame.sprite.Group(self.play_button,
-                                                      self.edit_button,
-                                                      self.intro_quit_button,
-                                                      self.intro_settings_button)
+        self.intro_button_group = pygame.sprite.Group(
+                                                     self.play_button,
+                                                     self.edit_button,
+                                                     self.intro_quit_button,
+                                                     self.intro_settings_button)
         self.game_buttons_group = pygame.sprite.Group(self.game_menu_button)
         self.edit_buttons_group = pygame.sprite.Group(self.edit_save_button,
                                                       self.edit_abandon_button,
                                                       self.edit_p0path_button,
                                                       self.edit_p1path_button)
         self.menu_button_group = pygame.sprite.Group(self.menu_back_button,
-                                                    #  self.menu_restart_button,
                                                      self.menu_main_button,
                                                      self.menu_settings_button)
-        self.settings_button_group = pygame.sprite.Group(self.settings_bgm_button,
-                                                         self.settings_sfx_button,
-                                                         self.settings_back_button)
+        self.settings_button_group = pygame.sprite.Group(
+                                                      self.settings_bgm_button,
+                                                      self.settings_sfx_button,
+                                                      self.settings_back_button)
 
         # load and play bgm
         pygame.mixer.music.load('./sounds/bgm.mp3')
@@ -223,6 +230,10 @@ class Game(object):
             elif self.intro_settings_button.is_clicked(pos):
                 self.settings_bgm_button.is_toggled = False
                 self.settings_sfx_button.is_toggled = False
+                self.settings_bgm_button.image = (
+                                            self.settings_bgm_button.base_image)
+                self.settings_sfx_button.image = (
+                                            self.settings_sfx_button.base_image)
                 self.from_splash = self.INTRO_SPLASH
                 self.splash = self.SETTINGS_SPLASH
 
@@ -235,9 +246,13 @@ class Game(object):
                 self.my_head.path = self.game_path.p1path
             else:
                 print('err: id %d' % self.id)
-        msg0 = 'p0path ' + ' '.join((str(self.game_path.p0path[i][0]) + ' ' + str(self.game_path.p0path[i][1])) for i in range(len(self.game_path.p0path))) + '\n'
+        msg0 = ('p0path ' + ' '.join((str(self.game_path.p0path[i][0]) + ' ' +
+str(self.game_path.p0path[i][1])) for i in range(len(self.game_path.p0path))) +
+'\n')
         self.send_msg(msg0)
-        msg1 = 'p1path ' + ' '.join((str(self.game_path.p1path[i][0]) + ' ' + str(self.game_path.p1path[i][1])) for i in range(len(self.game_path.p1path))) + '\n'
+        msg1 = ('p1path ' + ' '.join((str(self.game_path.p1path[i][0]) + ' ' +
+str(self.game_path.p1path[i][1])) for i in range(len(self.game_path.p1path))) +
+'\n')
         self.send_msg(msg1)
 
     def edit_save_clicked(self):
@@ -281,11 +296,12 @@ class Game(object):
         elif self.menu_main_button.is_clicked(pos):
             self.splash = self.INTRO_SPLASH
         elif self.menu_settings_button.is_clicked(pos):
+            self.settings_bgm_button.is_toggled = False
+            self.settings_sfx_button.is_toggled = False
+            self.settings_bgm_button.image = self.settings_bgm_button.base_image
+            self.settings_sfx_button.image = self.settings_sfx_button.base_image
             self.splash = self.SETTINGS_SPLASH
             self.from_splash = self.MENU_SPLASH
-        # elif self.menu_restart_button.is_clicked(pos):
-        #     self.splash = self.GAME_SPLASH
-            # restart here
 
     def menu_mouse_button_down(self, pos, button):
         if button == 1:
@@ -298,13 +314,17 @@ class Game(object):
             elif self.settings_bgm_button.is_clicked(pos):
                 self.settings_bgm_button.is_toggled = True
                 self.settings_sfx_button.is_toggled = False
-                self.settings_bgm_button.image = self.settings_bgm_button.clicked_img
-                self.settings_sfx_button.image = self.settings_sfx_button.base_image
+                self.settings_bgm_button.image = (
+                    self.settings_bgm_button.clicked_img)
+                self.settings_sfx_button.image = (
+                    self.settings_sfx_button.base_image)
             elif self.settings_sfx_button.is_clicked(pos):
                 self.settings_bgm_button.is_toggled = False
                 self.settings_sfx_button.is_toggled = True
-                self.settings_bgm_button.image = self.settings_bgm_button.base_image
-                self.settings_sfx_button.image = self.settings_sfx_button.clicked_img
+                self.settings_bgm_button.image = (
+                    self.settings_bgm_button.base_image)
+                self.settings_sfx_button.image = (
+                    self.settings_sfx_button.clicked_img)
 
     def mouse_button_down(self, pos, button):
         if self.splash == self.GAME_SPLASH:
@@ -326,14 +346,16 @@ class Game(object):
         else:
             return
 
-        if self.settings_bgm_button.is_toggled and not self.settings_sfx_button.is_toggled:
+        if (self.settings_bgm_button.is_toggled and
+            not self.settings_sfx_button.is_toggled):
             pygame.mixer.music.set_volume(pygame.mixer.music.get_volume() + dV)
-        elif not self.settings_bgm_button.is_toggled and self.settings_sfx_button.is_toggled:
+        elif (not self.settings_bgm_button.is_toggled and
+              self.settings_sfx_button.is_toggled):
             self.sfx_vol += dV
             if self.sfx_vol > 1:
                 self.sfx_vol = 1
-            elif self.sfx_vol < .01:
-                self.sfx_vol = .01
+            elif self.sfx_vol < .0390625:
+                self.sfx_vol = .0390625
             Ball.kill_sound.set_volume(self.sfx_vol)
             Ball.collide_sound.set_volume(self.sfx_vol)
 
@@ -357,19 +379,24 @@ class Game(object):
     def handle_id_msg(self, msg):
         self.id = int(msg[1])
         if self.id == 0:
-            self.my_head = Head(self.id, self.game_path.p0path, self.width, self.height, self.his_head)
+            self.my_head = Head(self.id, self.game_path.p0path,
+                                self.width, self.height, self.his_head)
         elif self.id == 1:
-            self.my_head = Head(self.id, self.game_path.p1path, self.width, self.height, self.his_head)
+            self.my_head = Head(self.id, self.game_path.p1path,
+                                self.width, self.height, self.his_head)
         self.head_group.add(self.my_head)
-        msg_out = 'balls ' + ' '.join(str(self.my_head.ball_list[i]) for i in range(len(self.my_head.ball_list))) + '\n'
+        msg_out = ('balls ' + ' '.join(str(self.my_head.ball_list[i])
+            for i in range(len(self.my_head.ball_list))) + '\n')
         self.send_msg(msg_out)
 
     def handle_new_player_msg(self, msg):
         self.his_id = int(msg[1])
         if self.his_id == 0:
-            self.his_head = Head(self.his_id, self.game_path.p0path, self.width, self.height, self.my_head)
+            self.his_head = Head(self.his_id, self.game_path.p0path,
+                                 self.width, self.height, self.my_head)
         elif self.his_id == 1:
-            self.his_head = Head(self.his_id, self.game_path.p1path, self.width, self.height, self.my_head)
+            self.his_head = Head(self.his_id, self.game_path.p1path,
+                                 self.width, self.height, self.my_head)
         self.my_head.stranger = self.his_head
         self.head_group.add(self.his_head)
 
@@ -405,7 +432,8 @@ class Game(object):
         if self.his_head == None:
             serverMsg.put(' '.join(msg))
         else:
-            self.his_head.ball_group.add(Ball(self.his_head, 0, color_index, self.width, self.height))
+            self.his_head.ball_group.add(Ball(self.his_head, 0, color_index,
+                self.width, self.height))
 
     def handle_p0path_msg(self, msg):
         p0path = []
@@ -531,9 +559,6 @@ class Game(object):
                             head_ball.update_coords()
                             head_ball.update_rect()
 
-    def intro_timer_fired(self):
-        pass
-
     def game_timer_fired(self):
         if not self.can_start: return
         self.frame_count += 1
@@ -543,7 +568,7 @@ class Game(object):
         if self.is_game_over: return
         self.is_game_over = True
         for head in self.head_group:
-            if len(head.ball_group) > 1:
+            if len(head.ball_group) > 2:
                 self.is_game_over = False
             head.move()
             for ball in head.ball_group:
@@ -555,7 +580,8 @@ class Game(object):
             self.splash = self.WIN_SPLASH
         if self.is_initiated and len(self.my_head.ball_group) == 0:
             color_index = random.randint(0, 2)
-            self.my_head.ball_group.add(Ball(self.my_head, 0, color_index, self.width, self.height))
+            self.my_head.ball_group.add(Ball(self.my_head, 0, color_index,
+                self.width, self.height))
             msg = 'new_ball %d\n' % color_index
             self.send_msg(msg)
         for ball in self.free_ball_group:
@@ -578,9 +604,7 @@ class Game(object):
 
     def timer_fired(self):
         self.handle_msg()
-        if self.splash == self.INTRO_SPLASH:
-            self.intro_timer_fired()
-        elif self.splash == self.GAME_SPLASH:
+        if self.splash == self.GAME_SPLASH:
             self.game_timer_fired()
         elif self.splash == self.EDIT_SPLASH:
             self.edit_timer_fired()
@@ -591,7 +615,8 @@ class Game(object):
 
     def generate_curr_path_img(self):
         # UnkwnTech
-        self.curr_path_img = pygame.Surface((self.width, self.height), pygame.SRCALPHA, 32)
+        self.curr_path_img = pygame.Surface((self.width, self.height),
+            pygame.SRCALPHA, 32)
         path = self.game_path
         for pixel in path.p0path:
             x, y = pixel
@@ -625,29 +650,31 @@ class Game(object):
         self.intro_button_group.draw(self.screen)
 
     def draw_transparent_rect(self, surface, color, rect):
-        # # Giráldez
-        # BEGIN
+        # Giráldez
         x0, y0, w, h = rect
         s = pygame.Surface((w, h))
         r, g, b, a = color
         s.set_alpha(a)
         s.fill((r, g, b))
         surface.blit(s, (x0, y0))
-        # END
 
     def win_redraw_all(self):
         self.game_redraw_all()
-        self.draw_transparent_rect(self.screen, (255, 255, 255, 128), (0, 0, self.width, self.height))
+        self.draw_transparent_rect(self.screen, (255, 255, 255, 128),
+            (0, 0, self.width, self.height))
         win_surface = self.font.render('YOU WIN!', 1, (0, 0, 0))
         w, h = win_surface.get_size()
-        self.screen.blit(win_surface, ((self.width - w) / 2, (self.height - h) / 2))
+        self.screen.blit(win_surface, ((self.width - w) / 2,
+                                       (self.height - h) / 2))
 
     def lose_redraw_all(self):
         self.game_redraw_all()
-        self.draw_transparent_rect(self.screen, (0, 0, 0, 128), (0, 0, self.width, self.height))
+        self.draw_transparent_rect(self.screen, (0, 0, 0, 128),
+            (0, 0, self.width, self.height))
         lose_surface = self.font.render('you lose…', 1, (255, 255, 255))
         w, h = lose_surface.get_size()
-        self.screen.blit(lose_surface, ((self.width - w) / 2, (self.height - h) / 2))
+        self.screen.blit(lose_surface, ((self.width - w) / 2,
+            (self.height - h) / 2))
 
     def edit_draw_title(self):
         title = self.font.render('CUSTOM MAP', 1, (0, 0, 0))
@@ -672,7 +699,8 @@ class Game(object):
     def menu_redraw(self):
         if self.prev_splash == self.GAME_SPLASH:
             self.game_redraw_all()
-        self.draw_transparent_rect(self.screen, (0, 0, 0, 128), (0, 0, self.width, self.height))
+        self.draw_transparent_rect(self.screen, (0, 0, 0, 128),
+            (0, 0, self.width, self.height))
         self.menu_button_group.draw(self.screen)
 
     def settings_redraw(self):
@@ -694,11 +722,14 @@ class Game(object):
 
         pygame.draw.circle(self.screen,
                            (200, 200, 200),
-                           (int(self.width * .4 * (1 + pygame.mixer.music.get_volume())), (self.height - 25) // 2),
+                           (int(self.width * .4 *
+                                (1 + pygame.mixer.music.get_volume())),
+                            (self.height - 25) // 2),
                            10)
         pygame.draw.circle(self.screen,
                            (200, 200, 200),
-                           (int(self.width * .4 * (1 + self.sfx_vol)), int((self.height + 25) / 2)),
+                           (int(self.width * .4 * (1 + self.sfx_vol)),
+                            int((self.height + 25) / 2)),
                            10)
 
     def redraw_all(self):
@@ -763,21 +794,34 @@ game = Game()
 game.run()
 
 # Works Cited #
-# AndroidGunso. YouTube. https://i.ytimg.com/vi/hDR6N3EdG34/maxresdefault.jpg
-# NimfaDora. Fan Pop. http://www.fanpop.com/clubs/zuma-deluxe/images/10840317/title/zuma-photo
-# Giráldez, Gustavo. Answer on "Draw a transparent rectangle in pygame." StackOverflow. http://stackoverflow.com/questions/6339057/draw-a-transparent-rectangle-in-pygame
+# AndroidGunso. YouTube. https://i.ytimg.com/vi/hDR6N3EdG34/maxresdefault.jpg.
+# NimfaDora. Fan Pop. http://www.fanpop.com/clubs/zuma-deluxe/images/10840317/t\
+    # itle/zuma-photo.
+# Giráldez, Gustavo. Answer on "Draw a transparent rectangle in pygame."
+    # StackOverflow. http://stackoverflow.com/questions/6339057/draw-a-transpar\
+        # ent-rectangle-in-pygame.
 # roblox. https://www.roblox.com/library/79538736/Zuma-Frog.
-# sloth. Answer on "Detect mouseover an image in Pygame." StackOverflow. http://stackoverflow.com/questions/11846032/detect-mouseover-an-image-in-pygame.
-# UnkwnTech. Answer on "How to make a surface with a transparent background in pygame." StackOverflow. http://stackoverflow.com/questions/328061/how-to-make-a-surface-with-a-transparent-background-in-pygame
-# veiset. StackOverflow. http://stackoverflow.com/questions/10077644/python-display-text-w-font-color.
+# sloth. Answer on "Detect mouseover an image in Pygame." StackOverflow. http:/\
+        # /stackoverflow.com/questions/11846032/detect-mouseover-an-image-in-py\
+        # game.
+# UnkwnTech. Answer on "How to make a surface with a transparent background in
+    # pygame." StackOverflow. http://stackoverflow.com/questions/328061/how-to-\
+        # make-a-surface-with-a-transparent-background-in-pygame.
+# veiset. StackOverflow. http://stackoverflow.com/questions/10077644/python-dis\
+        # play-text-w-font-color.
 # VGM For The Soul. YouTube. https://www.youtube.com/watch?v=HltKz0mLHig
-# Zuma Game Awesome Stuff. Pinterest. https://s-media-cache-ak0.pinimg.com/originals/4a/37/a5/4a37a5314f51ba7398005a26ac1a4496.jpg
+# Zuma Game Awesome Stuff. Pinterest. https://s-media-cache-ak0.pinimg.com/orig\
+        # inals/4a/37/a5/4a37a5314f51ba7398005a26ac1a4496.jpg.
 # Zuma Sound Bites. http://www.soundboard.com/sb/zuma_game_sounds
 
 # Bibliography
-# DeGlopper, Peter. Answer on "Bytes to int - Python 3." StackOverflow. http://stackoverflow.com/questions/34009653/bytes-to-int-python-3/
-# Pieters, Martijn. Answer on "How to split a byte string into separate bytes in python." StackOverflow. http://stackoverflow.com/questions/20024490/how-to-split-a-byte-string-into-separate-bytes-in-python.
-# Peraza, Lukas. Pygame tutorial. http://blog.lukasperaza.com/getting-started-with-pygame/.
+# DeGlopper, Peter. Answer on "Bytes to int - Python 3." StackOverflow. http://\
+        # stackoverflow.com/questions/34009653/bytes-to-int-python-3/
+# Pieters, Martijn. Answer on "How to split a byte string into separate bytes in
+    # python." StackOverflow. http://stackoverflow.com/questions/20024490/how-t\
+            # o-split-a-byte-string-into-separate-bytes-in-python.
+# Peraza, Lukas. Pygame tutorial. http://blog.lukasperaza.com/getting-started-w\
+        # ith-pygame/.
 # ---. Pygame Example on Github. https://github.com/LBPeraza/Pygame-Asteroids.
 # ---, and Lisa Liu. Pygame optional lectures.
 # Pygame documentation. https://www.pygame.org/docs/.

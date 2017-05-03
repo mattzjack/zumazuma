@@ -29,7 +29,7 @@ class Head(pygame.sprite.Sprite):
         self.angle = -math.pi / 2
         self.pos_speed = 1
         self.ball_group = pygame.sprite.Group()
-        self.num_balls = 15
+        self.num_balls = 30
         self.ball_list = list()
         for i in range(self.num_balls):
             ball_color = random.randint(0, 3)
