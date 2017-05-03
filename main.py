@@ -101,6 +101,11 @@ class Game(object):
                                            self.height * 4 / 5,
                                            150, 50, self.font, '', 'back')
 
+        self.quit_button = Button(self.width / 2 - 75,
+                                  self.height * 2 / 3 - 75,
+                                  150, 150, self.font, 'Quit', 'red')
+        self.quit_single = pygame.sprite.GroupSingle(self.quit_button)
+
         # load bg imgs
         self.intro_bg = pygame.transform.scale(
             pygame.image.load('./imgs/intro.png'), (self.width, self.height))
@@ -190,6 +195,14 @@ class Game(object):
             for button in self.settings_button_group:
                 button.update_img()
 
+    def win_motion(self, pos, rel, buttons):
+        if buttons == (0, 0, 0):
+            self.quit_button.update_img()
+
+    def lose_motion(self, pos, rel, buttons):
+        if buttons == (0, 0, 0):
+            self.quit_button.update_img()
+
     def mouse_motion(self, pos, rel, buttons):
         if self.splash == self.GAME_SPLASH:
             self.game_mouse_motion(pos, rel, buttons)
@@ -201,6 +214,10 @@ class Game(object):
             self.menu_motion(pos, rel, buttons)
         elif self.splash == self.SETTINGS_SPLASH:
             self.settings_motion(pos, rel, buttons)
+        elif self.splash == self.WIN_SPLASH:
+            self.win_motion(pos, rel, buttons)
+        elif self.splash == self.LOSE_SPLASH:
+            self.lose_motion(pos, rel, buttons)
 
     def game_menu_clicked(self):
         self.splash = self.MENU_SPLASH
@@ -326,6 +343,16 @@ str(self.game_path.p1path[i][1])) for i in range(len(self.game_path.p1path))) +
                 self.settings_sfx_button.image = (
                     self.settings_sfx_button.clicked_img)
 
+    def win_down(self, pos, button):
+        if button == 1:
+            if self.quit_button.is_clicked(pos):
+                self.is_playing = False
+
+    def lose_down(self, pos, button):
+        if button == 1:
+            if self.quit_button.is_clicked(pos):
+                self.is_playing = False
+
     def mouse_button_down(self, pos, button):
         if self.splash == self.GAME_SPLASH:
             self.game_mouse_button_down(pos, button)
@@ -337,6 +364,10 @@ str(self.game_path.p1path[i][1])) for i in range(len(self.game_path.p1path))) +
             self.menu_mouse_button_down(pos, button)
         elif self.splash == self.SETTINGS_SPLASH:
             self.settings_down(pos, button)
+        elif self.splash == self.WIN_SPLASH:
+            self.win_down(pos, button)
+        elif self.splash == self.LOSE_SPLASH:
+            self.lose_down(pos, button)
 
     def settings_key(self, unicode, key, mod):
         if key == 273:
@@ -666,6 +697,7 @@ str(self.game_path.p1path[i][1])) for i in range(len(self.game_path.p1path))) +
         w, h = win_surface.get_size()
         self.screen.blit(win_surface, ((self.width - w) / 2,
                                        (self.height - h) / 2))
+        self.quit_single.draw(self.screen)
 
     def lose_redraw_all(self):
         self.game_redraw_all()
@@ -675,6 +707,7 @@ str(self.game_path.p1path[i][1])) for i in range(len(self.game_path.p1path))) +
         w, h = lose_surface.get_size()
         self.screen.blit(lose_surface, ((self.width - w) / 2,
             (self.height - h) / 2))
+        self.quit_single.draw(self.screen)
 
     def edit_draw_title(self):
         title = self.font.render('CUSTOM MAP', 1, (0, 0, 0))
@@ -766,7 +799,7 @@ str(self.game_path.p1path[i][1])) for i in range(len(self.game_path.p1path))) +
             pygame.display.flip()
         pygame.quit()
 
-HOST = ''
+HOST = '128.237.132.171'
 PORT = 50014
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

@@ -2,7 +2,7 @@ import socket, time
 from _thread import *
 from queue import Queue
 
-HOST = ''
+HOST = '128.237.132.171'
 PORT = 50014
 BACKLOG = 4
 
