@@ -53,6 +53,7 @@ class Game(object):
         self.is_playing = True
 
         self.head_group = pygame.sprite.Group()
+        self.frame_count = 0
 
         self.splash = self.INTRO_SPLASH
         self.id = None
@@ -87,14 +88,22 @@ class Game(object):
                                                       self.edit_p0path_button,
                                                       self.edit_p1path_button)
 
+        self.game_menu_button = Button(self.width - 130, 0, 100, 40,
+                                                    self.font, '', 'menu')
+        self.game_buttons_group = pygame.sprite.Group(self.game_menu_button)
+
         self.is_game_over = False
         self.curr_path_img = None
         self.custom_path = None
         self.is_editing_p0path = True
 
         self.bg = pygame.transform.scale(pygame.image.load('./imgs/bg.png'), (self.width, self.height))
+        pygame.mixer.music.load('./sounds/bgm.mp3')
+        pygame.mixer.music.play(-1)
 
     def game_mouse_motion(self, pos, rel, buttons):
+        for button in self.game_buttons_group:
+            button.update_img()
         self.my_head.rotate(pos)
         msg = (('moved' + ' %d' * 7 + '\n') %
         (pos[0], pos[1], rel[0], rel[1], buttons[0], buttons[1], buttons[2]))
@@ -113,11 +122,18 @@ class Game(object):
                 self.custom_path = Path(self.width, self.height)
             self.edit_drag1(pos, rel)
 
+    def intro_motion(self, pos, rel, buttons):
+        if buttons == (0, 0, 0):
+            for button in self.intro_button_group:
+                button.update_img()
+
     def mouse_motion(self, pos, rel, buttons):
         if self.splash == self.GAME_SPLASH:
             self.game_mouse_motion(pos, rel, buttons)
         elif self.splash == self.EDIT_SPLASH:
             self.edit_motion(pos, rel, buttons)
+        elif self.splash == self.INTRO_SPLASH:
+            self.intro_motion(pos, rel, buttons)
 
     def game_mouse_button_down(self, pos, button):
         if button == 1:
@@ -352,6 +368,7 @@ class Game(object):
                 ball.was_colliding = False
 
     def timer_fired(self):
+        self.frame_count += 1
         self.handle_msg()
         if self.splash == self.INTRO_SPLASH:
             self.intro_timer_fired()
@@ -361,8 +378,7 @@ class Game(object):
             self.edit_timer_fired()
 
     def intro_timer_fired(self):
-        for button in self.intro_button_group:
-            button.update_img()
+        pass
 
     def game_timer_fired(self):
         if not self.can_start: return
@@ -379,6 +395,12 @@ class Game(object):
                 ball.move()
         if len(self.free_ball_group) > 0:
             self.is_game_over = False
+
+        self.my_head.update_ball_list()
+        if self.frame_count % 50 == 0:
+            msg = 'balls ' + ' '.join([str(self.my_head.ball_list[i]) for i in range(len(self.my_head.ball_list))]) + '\n'
+            self.send_msg(msg)
+
         if self.is_game_over:
             self.splash = self.WIN_SPLASH
         if self.is_initiated and len(self.my_head.ball_group) == 0:
@@ -398,7 +420,7 @@ class Game(object):
 
     def generate_curr_path_img(self):
         # UnkwnTech
-        self.curr_path_img = pygame.Surface((self.width, self.height), pygame.SRCALPHA, 32).convert_alpha()
+        self.curr_path_img = pygame.Surface((self.width, self.height), pygame.SRCALPHA, 32)
         path = self.game_path
         for pixel in path.p0path:
             x, y = pixel
@@ -425,6 +447,7 @@ class Game(object):
         for head in self.head_group:
             head.ball_group.draw(self.screen)
         self.free_ball_group.draw(self.screen)
+        self.game_buttons_group.draw(self.screen)
 
     def intro_redraw_all(self):
         self.intro_button_group.draw(self.screen)
@@ -530,11 +553,13 @@ game.run()
 
 # Works Cited #
 # AndroidGunso. YouTube. https://i.ytimg.com/vi/hDR6N3EdG34/maxresdefault.jpg
+# NimfaDora. Fan Pop. http://www.fanpop.com/clubs/zuma-deluxe/images/10840317/title/zuma-photo
 # Giráldez, Gustavo. Answer on "Draw a transparent rectangle in pygame." StackOverflow. http://stackoverflow.com/questions/6339057/draw-a-transparent-rectangle-in-pygame
 # roblox. https://www.roblox.com/library/79538736/Zuma-Frog.
 # sloth. Answer on "Detect mouseover an image in Pygame." StackOverflow. http://stackoverflow.com/questions/11846032/detect-mouseover-an-image-in-pygame.
 # UnkwnTech. Answer on "How to make a surface with a transparent background in pygame." StackOverflow. http://stackoverflow.com/questions/328061/how-to-make-a-surface-with-a-transparent-background-in-pygame
 # veiset. StackOverflow. http://stackoverflow.com/questions/10077644/python-display-text-w-font-color.
+# VGM For The Soul. YouTube. https://www.youtube.com/watch?v=HltKz0mLHig
 # Zuma Game Awesome Stuff. Pinterest. https://s-media-cache-ak0.pinimg.com/originals/4a/37/a5/4a37a5314f51ba7398005a26ac1a4496.jpg
 
 # Bibliography

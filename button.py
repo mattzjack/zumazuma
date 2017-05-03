@@ -5,7 +5,7 @@ class Button(pygame.sprite.Sprite):
     def load_images():
         # images from AndroidGunso
         Button.images = dict()
-        for file in ['green', 'play', 'back', 'red']:
+        for file in ['green', 'play', 'back', 'red', 'menu']:
             Button.images[file] = pygame.image.load('./imgs/%s_button.png' % file)
 
     def __init__(self, x0, y0, w, h, font, text, color):

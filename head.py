@@ -32,7 +32,7 @@ class Head(pygame.sprite.Sprite):
         self.num_balls = 15
         self.ball_list = list()
         for i in range(self.num_balls):
-            ball_color = random.randint(0, 2)
+            ball_color = random.randint(0, 3)
             self.ball_list.append(ball_color)
         self.update_ball_group(self.ball_list)
 
@@ -52,7 +52,11 @@ class Head(pygame.sprite.Sprite):
         dy = self.cy - y1
         self.angle = math.atan2(dy, dx)
         degs = self.angle * 180 / math.pi + 90
-        self.image = pygame.transform.rotate(self.base_image, degs)
+        rotated_img = pygame.transform.rotate(self.base_image, degs)
+        rw, rh = rotated_img.get_size()
+        # UnkwnTech
+        self.image = pygame.Surface((self.w, self.h), pygame.SRCALPHA, 32)
+        self.image.blit(rotated_img, (0, 0), ((rw - self.w) / 2, (rh - self.h) / 2, self.w, self.h))
         self.w, self.h = self.image.get_size()
         self.x0 = self.cx - self.w / 2
         self.y0 = self.cy - self.h / 2
@@ -79,3 +83,14 @@ class Head(pygame.sprite.Sprite):
         for i in range(N):
             this_color = self.ball_list[i]
             self.ball_group.add(Ball(self, i, this_color, self.game_width, self.game_height))
+
+    def update_ball_list(self):
+        self.ball_list = list()
+        while len(self.ball_list) < len(self.ball_group):
+            target = len(self.ball_list)
+            for ball in self.ball_group:
+                if ball.index == target:
+                    self.ball_list.append(ball.color)
+
+    def update(self):
+        self.update_ball_list()

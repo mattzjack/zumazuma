@@ -6,7 +6,7 @@ class Ball(pygame.sprite.Sprite):
     @staticmethod
     def load_images():
         Ball.images = list()
-        for filename in ['red', 'blue', 'green']:
+        for filename in ['red', 'blue', 'green', 'purple']:
             img = pygame.image.load('./imgs/%s.png' % filename).convert_alpha()
             w = h = 50
             scaled_img = pygame.transform.scale(img, (w, h))
@@ -81,4 +81,5 @@ class Ball(pygame.sprite.Sprite):
                 raise Exception('ball with index %d not found' % len(self.ball_list))
 
     def update(self):
-        self.update_ball_list()
+        pass
+        # self.update_ball_list()
