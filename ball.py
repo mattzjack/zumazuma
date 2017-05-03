@@ -12,6 +12,11 @@ class Ball(pygame.sprite.Sprite):
             scaled_img = pygame.transform.scale(img, (w, h))
             Ball.images.append(scaled_img)
 
+    @staticmethod
+    def load_sounds():
+        Ball.collide_sound = pygame.mixer.Sound('./sounds/collide.ogg')
+        Ball.kill_sound = pygame.mixer.Sound('./sounds/kill.ogg')
+
     def __init__(self, owner, index, color, game_width, game_height):
         super().__init__()
 
@@ -31,8 +36,6 @@ class Ball(pygame.sprite.Sprite):
         self.angle = 0
         self.pos_speed = self.owner.pos_speed
         self.was_colliding = False
-        Ball.collide_sound = pygame.mixer.Sound('./sounds/collide.ogg')
-        Ball.kill_sound = pygame.mixer.Sound('./sounds/kill.ogg')
 
     def move(self):
         if self.is_bound:

@@ -28,53 +28,47 @@ class Game(object):
         Game.load_path0(game_width, game_height)
 
     def __init__(self):
-        pygame.init()
-        # veiset
-        # BEGIN
-        self.font = pygame.font.Font('./fonts/Courier.dfont', 30)
-        self.papyrus = pygame.font.Font('./fonts/Papyrus.ttc', 30)
-        # END
-        Button.load_images()
+        # set game params
         self.width = 800
         self.height = 600
-        Game.load_paths(self.width, self.height)
-        self.screen = pygame.display.set_mode((self.width, self.height))
-        self.clock = pygame.time.Clock()
-        Head.load_images()
-        Ball.load_images()
-
+        self.FPS = 50
+        self.frame_count = 0
         self.INTRO_SPLASH = 'intro'
         self.GAME_SPLASH = 'game'
         self.WIN_SPLASH = 'win'
         self.LOSE_SPLASH = 'lose'
         self.EDIT_SPLASH = 'edit'
         self.MENU_SPLASH = 'menu'
+        self.SETTINGS_SPLASH = 'settings'
+        self.sfx_vol = .75
 
-        self.FPS = 50
-        self.is_playing = True
-        self.is_paused = False
+        # init pygame
+        pygame.init()
+        self.screen = pygame.display.set_mode((self.width, self.height))
+        self.clock = pygame.time.Clock()
 
-        self.head_group = pygame.sprite.Group()
-        self.frame_count = 0
+        # load fonts
+        # veiset
+        self.font = pygame.font.Font('./fonts/Courier.dfont', 30)
+        self.papyrus = pygame.font.Font('./fonts/Papyrus.ttc', 30)
 
-        self.splash = self.INTRO_SPLASH
-        self.prev_splash = self.INTRO_SPLASH
-        self.id = None
+        # load class attrs
+        Button.load_images()
+        Game.load_paths(self.width, self.height)
+        Head.load_images()
+        Ball.load_images()
+        Ball.load_sounds()
+        Ball.kill_sound.set_volume(self.sfx_vol)
+        Ball.collide_sound.set_volume(self.sfx_vol)
 
-        self.free_ball_group = pygame.sprite.Group()
-
-        self.my_head = self.his_head = None
-
-        self.game_path = random.choice(Game.paths)
-
-        self.can_start = False
-        self.is_initiated = False
-
+        # buttons
         self.play_button = Button(592, 118, 150, 60, self.font, '', 'play')
-        self.edit_button = Button(568, 219, 175, 60,
+        self.edit_button = Button(568, 215, 175, 60,
                                   self.font, 'Edit Maps', 'green')
-        self.intro_button_group = pygame.sprite.Group(self.play_button, self.edit_button)
-
+        self.intro_quit_button = Button(650, 410, 100, 100,
+                                        self.font, 'Quit', 'red')
+        self.intro_settings_button = Button(555, 310, 185, 55,
+                                            self.font, 'Settings', 'purple')
 
         self.edit_p0path_button = Button(self.width - 120, self.height - 100,
                                          120, 50, self.font, 'Path 0', 'green')
@@ -85,38 +79,73 @@ class Game(object):
         self.edit_abandon_button = Button(0, self.height - 50,
                                           150, 50, self.font, 'Abandon', 'red')
 
-        self.edit_buttons_group = pygame.sprite.Group(self.edit_save_button,
-                                                      self.edit_abandon_button,
-                                                      self.edit_p0path_button,
-                                                      self.edit_p1path_button)
-
         self.game_menu_button = Button(self.width - 130, 0, 100, 40,
                                        self.font, '', 'menu')
-        self.game_buttons_group = pygame.sprite.Group(self.game_menu_button)
 
-        self.menu_restart_button = Button(self.width / 2 - 100, self.height / 2 - 100,
-                                          200, 50, self.font, 'Restart', 'red')
+        # self.menu_restart_button = Button(self.width / 2 - 100, self.height / 2 - 100,
+        #                                   200, 50, self.font, 'Restart', 'red')
         self.menu_main_button = Button(self.width / 2 - 100, self.height / 2 - 50,
                                        200, 50, self.font, 'Main Menu', 'green')
         self.menu_settings_button = Button(self.width / 2 - 100, self.height / 2,
                                            200, 50, self.font, 'Settings', 'purple')
         self.menu_back_button = Button(self.width / 2 - 100, self.height / 2 + 100,
                                        200, 50, self.font, '', 'back')
+
+        self.settings_bgm_button = Button(self.width / 5, self.height / 2 - 50,
+                                          100, 50, self.font, 'BGM', 'green')
+        self.settings_sfx_button = Button(self.width / 5, self.height / 2,
+                                          100, 50, self.font, 'SFX', 'green')
+        self.settings_back_button = Button(self.width / 2 - 75,
+                                           self.height * 4 / 5,
+                                           150, 50, self.font, '', 'back')
+
+        # load bg imgs
+        self.intro_bg = pygame.transform.scale(pygame.image.load('./imgs/intro.png'), (self.width, self.height))
+        self.bg = pygame.transform.scale(pygame.image.load('./imgs/bg.png'), (self.width, self.height))
+        self.purple_bg = pygame.transform.scale(pygame.image.load('./imgs/purple_bg.png'), (self.width, self.height))
+
+        # game groups
+        self.head_group = pygame.sprite.Group()
+        self.free_ball_group = pygame.sprite.Group()
+
+        # button groups
+        self.intro_button_group = pygame.sprite.Group(self.play_button,
+                                                      self.edit_button,
+                                                      self.intro_quit_button,
+                                                      self.intro_settings_button)
+        self.game_buttons_group = pygame.sprite.Group(self.game_menu_button)
+        self.edit_buttons_group = pygame.sprite.Group(self.edit_save_button,
+                                                      self.edit_abandon_button,
+                                                      self.edit_p0path_button,
+                                                      self.edit_p1path_button)
         self.menu_button_group = pygame.sprite.Group(self.menu_back_button,
-                                                     self.menu_restart_button,
+                                                    #  self.menu_restart_button,
                                                      self.menu_main_button,
                                                      self.menu_settings_button)
+        self.settings_button_group = pygame.sprite.Group(self.settings_bgm_button,
+                                                         self.settings_sfx_button,
+                                                         self.settings_back_button)
 
+        # load and play bgm
+        pygame.mixer.music.load('./sounds/bgm.mp3')
+        pygame.mixer.music.play(-1)
+        pygame.mixer.music.set_volume(.75)
+
+        # setting vars
+        self.is_playing = True
+        self.is_paused = False
         self.is_game_over = False
         self.curr_path_img = None
         self.custom_path = None
         self.is_editing_p0path = True
-
-        self.intro_bg = pygame.transform.scale(pygame.image.load('./imgs/intro.png'), (self.width, self.height))
-        self.bg = pygame.transform.scale(pygame.image.load('./imgs/bg.png'), (self.width, self.height))
-
-        pygame.mixer.music.load('./sounds/bgm.mp3')
-        pygame.mixer.music.play(-1)
+        self.can_start = False
+        self.is_initiated = False
+        self.id = None
+        self.splash = self.INTRO_SPLASH
+        self.prev_splash = self.INTRO_SPLASH
+        self.from_splash = self.INTRO_SPLASH
+        self.game_path = random.choice(Game.paths)
+        self.my_head = self.his_head = None
 
     def game_mouse_motion(self, pos, rel, buttons):
         for button in self.game_buttons_group:
@@ -149,6 +178,11 @@ class Game(object):
             for button in self.menu_button_group:
                 button.update_img()
 
+    def settings_motion(self, pos, rel, buttons):
+        if buttons == (0, 0, 0):
+            for button in self.settings_button_group:
+                button.update_img()
+
     def mouse_motion(self, pos, rel, buttons):
         if self.splash == self.GAME_SPLASH:
             self.game_mouse_motion(pos, rel, buttons)
@@ -158,6 +192,8 @@ class Game(object):
             self.intro_motion(pos, rel, buttons)
         elif self.splash == self.MENU_SPLASH:
             self.menu_motion(pos, rel, buttons)
+        elif self.splash == self.SETTINGS_SPLASH:
+            self.settings_motion(pos, rel, buttons)
 
     def game_menu_clicked(self):
         self.splash = self.MENU_SPLASH
@@ -182,6 +218,13 @@ class Game(object):
             elif self.edit_button.rect.collidepoint(pos):
                 self.splash = self.EDIT_SPLASH
                 self.custom_path = None
+            elif self.intro_quit_button.is_clicked(pos):
+                self.is_playing = False
+            elif self.intro_settings_button.is_clicked(pos):
+                self.settings_bgm_button.is_toggled = False
+                self.settings_sfx_button.is_toggled = False
+                self.from_splash = self.INTRO_SPLASH
+                self.splash = self.SETTINGS_SPLASH
 
     def update_game_path(self):
         self.game_path = self.custom_path
@@ -235,10 +278,33 @@ class Game(object):
     def menu_button1down(self, pos):
         if self.menu_back_button.is_clicked(pos):
             self.splash, self.prev_splash = self.prev_splash, self.splash
+        elif self.menu_main_button.is_clicked(pos):
+            self.splash = self.INTRO_SPLASH
+        elif self.menu_settings_button.is_clicked(pos):
+            self.splash = self.SETTINGS_SPLASH
+            self.from_splash = self.MENU_SPLASH
+        # elif self.menu_restart_button.is_clicked(pos):
+        #     self.splash = self.GAME_SPLASH
+            # restart here
 
     def menu_mouse_button_down(self, pos, button):
         if button == 1:
             self.menu_button1down(pos)
+
+    def settings_down(self, pos, button):
+        if button == 1:
+            if self.settings_back_button.is_clicked(pos):
+                self.splash = self.from_splash
+            elif self.settings_bgm_button.is_clicked(pos):
+                self.settings_bgm_button.is_toggled = True
+                self.settings_sfx_button.is_toggled = False
+                self.settings_bgm_button.image = self.settings_bgm_button.clicked_img
+                self.settings_sfx_button.image = self.settings_sfx_button.base_image
+            elif self.settings_sfx_button.is_clicked(pos):
+                self.settings_bgm_button.is_toggled = False
+                self.settings_sfx_button.is_toggled = True
+                self.settings_bgm_button.image = self.settings_bgm_button.base_image
+                self.settings_sfx_button.image = self.settings_sfx_button.clicked_img
 
     def mouse_button_down(self, pos, button):
         if self.splash == self.GAME_SPLASH:
@@ -249,6 +315,31 @@ class Game(object):
             self.edit_mouse_button_down(pos, button)
         elif self.splash == self.MENU_SPLASH:
             self.menu_mouse_button_down(pos, button)
+        elif self.splash == self.SETTINGS_SPLASH:
+            self.settings_down(pos, button)
+
+    def settings_key(self, unicode, key, mod):
+        if key == 273:
+            dV = .05
+        elif key == 274:
+            dV = -.05
+        else:
+            return
+
+        if self.settings_bgm_button.is_toggled and not self.settings_sfx_button.is_toggled:
+            pygame.mixer.music.set_volume(pygame.mixer.music.get_volume() + dV)
+        elif not self.settings_bgm_button.is_toggled and self.settings_sfx_button.is_toggled:
+            self.sfx_vol += dV
+            if self.sfx_vol > 1:
+                self.sfx_vol = 1
+            elif self.sfx_vol < .01:
+                self.sfx_vol = .01
+            Ball.kill_sound.set_volume(self.sfx_vol)
+            Ball.collide_sound.set_volume(self.sfx_vol)
+
+    def key(self, unicode, key, mod):
+        if self.splash == self.SETTINGS_SPLASH:
+            self.settings_key(unicode, key, mod)
 
     def send_msg(self, msg):
         server.send(msg.encode())
@@ -410,7 +501,7 @@ class Game(object):
                         if ((head_ball.color == ball.color) and
                             (head_ball.index == prev_index + 1)):
                             indices_to_kill.append(head_ball.index)
-                            prev_index = head_ball.index
+                            prev_index += 1
 
                     # looking backward
                     prev_index = ball.index
@@ -418,7 +509,7 @@ class Game(object):
                         if ((head_ball.color == ball.color) and
                             (head_ball.index == prev_index - 1)):
                             indices_to_kill.append(head_ball.index)
-                            prev_index = head_ball.index
+                            prev_index -= 1
 
                     # killing balls
                     if len(indices_to_kill) > 2:
@@ -460,11 +551,6 @@ class Game(object):
         if len(self.free_ball_group) > 0:
             self.is_game_over = False
 
-        # self.my_head.update_ball_list()
-        # if self.frame_count % 50 == 0:
-        #     msg = 'balls ' + ' '.join([str(self.my_head.ball_list[i]) for i in range(len(self.my_head.ball_list))]) + '\n'
-        #     self.send_msg(msg)
-
         if self.is_game_over:
             self.splash = self.WIN_SPLASH
         if self.is_initiated and len(self.my_head.ball_group) == 0:
@@ -486,6 +572,10 @@ class Game(object):
         if self.prev_splash == self.GAME_SPLASH:
             self.game_timer_fired()
 
+    def settings_timer(self):
+        if self.prev_splash == self.GAME_SPLASH:
+            self.game_timer_fired()
+
     def timer_fired(self):
         self.handle_msg()
         if self.splash == self.INTRO_SPLASH:
@@ -496,6 +586,8 @@ class Game(object):
             self.edit_timer_fired()
         elif self.splash == self.MENU_SPLASH:
             self.menu_timer()
+        elif self.splash == self.SETTINGS_SPLASH:
+            self.settings_timer()
 
     def generate_curr_path_img(self):
         # UnkwnTech
@@ -571,6 +663,7 @@ class Game(object):
             pygame.draw.circle(self.screen, (200, 0, 0), pos, 10)
 
     def edit_redraw_all(self):
+        self.draw_bg()
         self.edit_draw_title()
         self.edit_draw_buttons()
         if self.custom_path != None:
@@ -581,6 +674,32 @@ class Game(object):
             self.game_redraw_all()
         self.draw_transparent_rect(self.screen, (0, 0, 0, 128), (0, 0, self.width, self.height))
         self.menu_button_group.draw(self.screen)
+
+    def settings_redraw(self):
+        self.screen.fill((0, 0, 0))
+        self.screen.blit(self.purple_bg, (0, 0))
+
+        title = self.font.render('Settings', 1, (255, 255, 255))
+        title_w, title_h = title.get_size()
+        self.screen.blit(title, ((self.width - title_w) / 2, title_h * 1.5))
+
+        self.settings_button_group.draw(self.screen)
+
+        pygame.draw.line(self.screen, (20, 20, 20),
+                         (self.width * 2 / 5, (self.height - 25) / 2),
+                         (self.width * 4 / 5, (self.height - 25) / 2), 3)
+        pygame.draw.line(self.screen, (20, 20, 20),
+                         (self.width * 2 / 5, (self.height + 25) / 2),
+                         (self.width * 4 / 5, (self.height + 25) / 2), 3)
+
+        pygame.draw.circle(self.screen,
+                           (200, 200, 200),
+                           (int(self.width * .4 * (1 + pygame.mixer.music.get_volume())), (self.height - 25) // 2),
+                           10)
+        pygame.draw.circle(self.screen,
+                           (200, 200, 200),
+                           (int(self.width * .4 * (1 + self.sfx_vol)), int((self.height + 25) / 2)),
+                           10)
 
     def redraw_all(self):
         if self.splash == self.GAME_SPLASH:
@@ -595,6 +714,8 @@ class Game(object):
             self.edit_redraw_all()
         elif self.splash == self.MENU_SPLASH:
             self.menu_redraw()
+        elif self.splash == self.SETTINGS_SPLASH:
+            self.settings_redraw()
 
     def run(self):
         while self.is_playing:
@@ -607,6 +728,8 @@ class Game(object):
                     self.mouse_motion(event.pos, event.rel, event.buttons)
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     self.mouse_button_down(event.pos, event.button)
+                elif event.type == pygame.KEYDOWN:
+                    self.key(event.unicode, event.key, event.mod)
             self.screen.fill((255, 255, 255))
             self.redraw_all()
             pygame.display.flip()

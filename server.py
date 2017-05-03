@@ -10,12 +10,12 @@ server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind((HOST,PORT))
 server.listen(BACKLOG)
 
-num_ready_players = [0]
+num_ready_players = dict()
 
 def serverThread(clientele, serverChannel):
     sent = False
     while True:
-        if not sent and num_ready_players[0] == 2:
+        if not sent and len(num_ready_players) == 2:
             sent = True
             msg = 'start\n'
             for cID in clientele:
@@ -50,7 +50,7 @@ def handleClient(client, serverChannel, cID):
             can_put = True
             if readyMsg.startswith('ready'):
                 can_put = False
-                num_ready_players[0] += 1
+                num_ready_players[cID] = True
             if can_put:
                 serverChannel.put(str(cID) + "_" + readyMsg)
             msg = "\n".join(command[1:])
