@@ -48,14 +48,17 @@ class Game(object):
         self.WIN_SPLASH = 'win'
         self.LOSE_SPLASH = 'lose'
         self.EDIT_SPLASH = 'edit'
+        self.MENU_SPLASH = 'menu'
 
         self.FPS = 50
         self.is_playing = True
+        self.is_paused = False
 
         self.head_group = pygame.sprite.Group()
         self.frame_count = 0
 
         self.splash = self.INTRO_SPLASH
+        self.prev_splash = self.INTRO_SPLASH
         self.id = None
 
         self.free_ball_group = pygame.sprite.Group()
@@ -67,10 +70,9 @@ class Game(object):
         self.can_start = False
         self.is_initiated = False
 
-        self.play_button = Button(self.width / 2 - 75, self.height / 2 - 25,
-                                  150, 50, self.font, '', 'play')
-        self.edit_button = Button(self.width / 2 - 75, self.height / 2 + 25,
-                                  150, 50, self.papyrus, 'Edit Maps', 'green')
+        self.play_button = Button(592, 118, 150, 60, self.font, '', 'play')
+        self.edit_button = Button(568, 219, 175, 60,
+                                  self.font, 'Edit Maps', 'green')
         self.intro_button_group = pygame.sprite.Group(self.play_button, self.edit_button)
 
 
@@ -89,15 +91,30 @@ class Game(object):
                                                       self.edit_p1path_button)
 
         self.game_menu_button = Button(self.width - 130, 0, 100, 40,
-                                                    self.font, '', 'menu')
+                                       self.font, '', 'menu')
         self.game_buttons_group = pygame.sprite.Group(self.game_menu_button)
+
+        self.menu_restart_button = Button(self.width / 2 - 100, self.height / 2 - 100,
+                                          200, 50, self.font, 'Restart', 'red')
+        self.menu_main_button = Button(self.width / 2 - 100, self.height / 2 - 50,
+                                       200, 50, self.font, 'Main Menu', 'green')
+        self.menu_settings_button = Button(self.width / 2 - 100, self.height / 2,
+                                           200, 50, self.font, 'Settings', 'purple')
+        self.menu_back_button = Button(self.width / 2 - 100, self.height / 2 + 100,
+                                       200, 50, self.font, '', 'back')
+        self.menu_button_group = pygame.sprite.Group(self.menu_back_button,
+                                                     self.menu_restart_button,
+                                                     self.menu_main_button,
+                                                     self.menu_settings_button)
 
         self.is_game_over = False
         self.curr_path_img = None
         self.custom_path = None
         self.is_editing_p0path = True
 
+        self.intro_bg = pygame.transform.scale(pygame.image.load('./imgs/intro.png'), (self.width, self.height))
         self.bg = pygame.transform.scale(pygame.image.load('./imgs/bg.png'), (self.width, self.height))
+
         pygame.mixer.music.load('./sounds/bgm.mp3')
         pygame.mixer.music.play(-1)
 
@@ -127,6 +144,11 @@ class Game(object):
             for button in self.intro_button_group:
                 button.update_img()
 
+    def menu_motion(self, pos, rel, buttons):
+        if buttons == (0, 0, 0):
+            for button in self.menu_button_group:
+                button.update_img()
+
     def mouse_motion(self, pos, rel, buttons):
         if self.splash == self.GAME_SPLASH:
             self.game_mouse_motion(pos, rel, buttons)
@@ -134,12 +156,22 @@ class Game(object):
             self.edit_motion(pos, rel, buttons)
         elif self.splash == self.INTRO_SPLASH:
             self.intro_motion(pos, rel, buttons)
+        elif self.splash == self.MENU_SPLASH:
+            self.menu_motion(pos, rel, buttons)
+
+    def game_menu_clicked(self):
+        self.splash = self.MENU_SPLASH
+        self.prev_splash = self.GAME_SPLASH
+        self.is_paused = True
 
     def game_mouse_button_down(self, pos, button):
         if button == 1:
-            self.my_head.shoot(pos, self.free_ball_group)
-            msg = 'clicked %d %d %d\n' % (pos[0], pos[1], button)
-            self.send_msg(msg)
+            if self.game_menu_button.is_clicked(pos):
+                self.game_menu_clicked()
+            else:
+                self.my_head.shoot(pos, self.free_ball_group)
+                msg = 'clicked %d %d %d\n' % (pos[0], pos[1], button)
+                self.send_msg(msg)
 
     def intro_mouse_button_down(self, pos, button):
         if button == 1:
@@ -200,6 +232,14 @@ class Game(object):
         if button == 1:
             self.edit_button1down(pos)
 
+    def menu_button1down(self, pos):
+        if self.menu_back_button.is_clicked(pos):
+            self.splash, self.prev_splash = self.prev_splash, self.splash
+
+    def menu_mouse_button_down(self, pos, button):
+        if button == 1:
+            self.menu_button1down(pos)
+
     def mouse_button_down(self, pos, button):
         if self.splash == self.GAME_SPLASH:
             self.game_mouse_button_down(pos, button)
@@ -207,6 +247,8 @@ class Game(object):
             self.intro_mouse_button_down(pos, button)
         elif self.splash == self.EDIT_SPLASH:
             self.edit_mouse_button_down(pos, button)
+        elif self.splash == self.MENU_SPLASH:
+            self.menu_mouse_button_down(pos, button)
 
     def send_msg(self, msg):
         server.send(msg.encode())
@@ -346,42 +388,64 @@ class Game(object):
         for ball in collided_balls:
             ball.was_colliding = True
             other_balls = collided_balls[ball]
-            if len(other_balls) == 2:
-                first_ball = other_balls[0]
-                second_ball = other_balls[1]
-                if abs(first_ball.index - second_ball.index) == 1:
-                    if ball.color == first_ball.color == second_ball.color:
-                        ball.kill()
-                        first_ball.kill()
-                        second_ball.kill()
-                        for ball in group:
-                            if ball.index > second_ball.index:
-                                ball.index -= 2
-                        for ball in group:
-                            ball.update_pos()
-                            ball.update_coords()
-                            ball.update_rect()
-                    else:
-                        self.insert_ball_after_index(ball, head, min(first_ball.index, second_ball.index))
-        for ball in self.free_ball_group:
-            if ball not in collided_balls:
-                ball.was_colliding = False
+            if len(other_balls) > 0:
+                Ball.collide_sound.play()
+                him = other_balls[0]
+                for other_ball in other_balls:
+                    if other_ball.index < him.index:
+                        him = other_ball
+                skip = False
+                if him.owner == ball.owner and him.index == 0:
+                    skip = True
+                if not skip:
+                    self.insert_ball_after_index(ball, head, him.index)
 
-    def timer_fired(self):
-        self.frame_count += 1
-        self.handle_msg()
-        if self.splash == self.INTRO_SPLASH:
-            self.intro_timer_fired()
-        elif self.splash == self.GAME_SPLASH:
-            self.game_timer_fired()
-        elif self.splash == self.EDIT_SPLASH:
-            self.edit_timer_fired()
+                    # kill string of balls of the same color, within which this
+                    # ball is involved
+                    indices_to_kill = [ball.index]
+
+                    # looking forward
+                    prev_index = ball.index
+                    for head_ball in head.ball_group:
+                        if ((head_ball.color == ball.color) and
+                            (head_ball.index == prev_index + 1)):
+                            indices_to_kill.append(head_ball.index)
+                            prev_index = head_ball.index
+
+                    # looking backward
+                    prev_index = ball.index
+                    for head_ball in head.ball_group:
+                        if ((head_ball.color == ball.color) and
+                            (head_ball.index == prev_index - 1)):
+                            indices_to_kill.append(head_ball.index)
+                            prev_index = head_ball.index
+
+                    # killing balls
+                    if len(indices_to_kill) > 2:
+                        Ball.kill_sound.play()
+                        for i in indices_to_kill:
+                            for head_ball in head.ball_group:
+                                if head_ball.index == i:
+                                    head_ball.kill()
+
+                        # updating indices and pos'es
+                        shift = len(indices_to_kill)
+                        largest_killed_index = max(indices_to_kill)
+                        for head_ball in head.ball_group:
+                            if head_ball.index > largest_killed_index:
+                                head_ball.index -= shift
+
+                        for head_ball in head.ball_group:
+                            head_ball.update_pos()
+                            head_ball.update_coords()
+                            head_ball.update_rect()
 
     def intro_timer_fired(self):
         pass
 
     def game_timer_fired(self):
         if not self.can_start: return
+        self.frame_count += 1
         if pygame.sprite.collide_circle(self.my_head, self.his_head):
             self.is_game_over = True
             self.splash = self.LOSE_SPLASH
@@ -396,10 +460,10 @@ class Game(object):
         if len(self.free_ball_group) > 0:
             self.is_game_over = False
 
-        self.my_head.update_ball_list()
-        if self.frame_count % 50 == 0:
-            msg = 'balls ' + ' '.join([str(self.my_head.ball_list[i]) for i in range(len(self.my_head.ball_list))]) + '\n'
-            self.send_msg(msg)
+        # self.my_head.update_ball_list()
+        # if self.frame_count % 50 == 0:
+        #     msg = 'balls ' + ' '.join([str(self.my_head.ball_list[i]) for i in range(len(self.my_head.ball_list))]) + '\n'
+        #     self.send_msg(msg)
 
         if self.is_game_over:
             self.splash = self.WIN_SPLASH
@@ -417,6 +481,21 @@ class Game(object):
 
     def edit_timer_fired(self):
         self.edit_buttons_group.update()
+
+    def menu_timer(self):
+        if self.prev_splash == self.GAME_SPLASH:
+            self.game_timer_fired()
+
+    def timer_fired(self):
+        self.handle_msg()
+        if self.splash == self.INTRO_SPLASH:
+            self.intro_timer_fired()
+        elif self.splash == self.GAME_SPLASH:
+            self.game_timer_fired()
+        elif self.splash == self.EDIT_SPLASH:
+            self.edit_timer_fired()
+        elif self.splash == self.MENU_SPLASH:
+            self.menu_timer()
 
     def generate_curr_path_img(self):
         # UnkwnTech
@@ -450,6 +529,7 @@ class Game(object):
         self.game_buttons_group.draw(self.screen)
 
     def intro_redraw_all(self):
+        self.screen.blit(self.intro_bg, (0, 0))
         self.intro_button_group.draw(self.screen)
 
     def draw_transparent_rect(self, surface, color, rect):
@@ -496,6 +576,12 @@ class Game(object):
         if self.custom_path != None:
             self.edit_draw_custom_path()
 
+    def menu_redraw(self):
+        if self.prev_splash == self.GAME_SPLASH:
+            self.game_redraw_all()
+        self.draw_transparent_rect(self.screen, (0, 0, 0, 128), (0, 0, self.width, self.height))
+        self.menu_button_group.draw(self.screen)
+
     def redraw_all(self):
         if self.splash == self.GAME_SPLASH:
             self.game_redraw_all()
@@ -507,6 +593,8 @@ class Game(object):
             self.lose_redraw_all()
         elif self.splash == self.EDIT_SPLASH:
             self.edit_redraw_all()
+        elif self.splash == self.MENU_SPLASH:
+            self.menu_redraw()
 
     def run(self):
         while self.is_playing:
@@ -561,6 +649,7 @@ game.run()
 # veiset. StackOverflow. http://stackoverflow.com/questions/10077644/python-display-text-w-font-color.
 # VGM For The Soul. YouTube. https://www.youtube.com/watch?v=HltKz0mLHig
 # Zuma Game Awesome Stuff. Pinterest. https://s-media-cache-ak0.pinimg.com/originals/4a/37/a5/4a37a5314f51ba7398005a26ac1a4496.jpg
+# Zuma Sound Bites. http://www.soundboard.com/sb/zuma_game_sounds
 
 # Bibliography
 # DeGlopper, Peter. Answer on "Bytes to int - Python 3." StackOverflow. http://stackoverflow.com/questions/34009653/bytes-to-int-python-3/

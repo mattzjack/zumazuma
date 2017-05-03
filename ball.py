@@ -31,6 +31,8 @@ class Ball(pygame.sprite.Sprite):
         self.angle = 0
         self.pos_speed = self.owner.pos_speed
         self.was_colliding = False
+        Ball.collide_sound = pygame.mixer.Sound('./sounds/collide.ogg')
+        Ball.kill_sound = pygame.mixer.Sound('./sounds/kill.ogg')
 
     def move(self):
         if self.is_bound:
@@ -40,6 +42,7 @@ class Ball(pygame.sprite.Sprite):
         else:
             if (self.cy < -self.r or self.cy > self.game_height + self.r or
                 self.cx < -self.r or self.cx > self.game_width + self.r):
+                Ball.collide_sound.play()
                 self.is_bound = True
                 self.owner = self.owner.stranger
                 self.index = len(self.owner.ball_group)
