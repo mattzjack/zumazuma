@@ -1,0 +1,9 @@
+In this term project, I made a game that is similar to the PopCap game, Zuma. The main feature that is unique to my project is that it is a multiplayer version of the game, implemented by socket.
+
+While taking directly some graphics from the original Zuma, I also incorporated some elements from BombSquad, a game by Eric Froemling, such as buttons and the settings screen, for artistic improvements and easier and more elegant implementation of such features. Hover and toggle effects of the buttons are generated within the project's main program, for further visual sophistication.
+
+The main part of the game involves eliminating balls of different colors by shooting balls with matched colors at them. I used pygame to handle the drawing of a large number of images, and used pygame's built-in collision basics with my own collision function, to fine-tune the collision. I also developed a complex algorithm to replicate the collision game logic in the original game.
+
+There are two main features that I found valuable from the user study, that unfortunately I do not have enough time to implement. One is collision effects, such as explosion and smooth insertion animation. To implement the explosion, I can write another pygame sprite subclass with a multi-frame gif that is drawn upon collision of balls with the matching color, and killed immediately after the frames run out.
+
+Another potential feature is balls with special effects, such as "freeze," "reverse," etc. To implement this, I can introduce an extra step before the current collision detection mechanism, identify the colliding special ball, and call the corresponding functions.

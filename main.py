@@ -799,7 +799,7 @@ str(self.game_path.p1path[i][1])) for i in range(len(self.game_path.p1path))) +
             pygame.display.flip()
         pygame.quit()
 
-HOST = '128.237.132.171'
+HOST = ''
 PORT = 50014
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
